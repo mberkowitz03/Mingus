@@ -1,2 +1,2 @@
 # Mingus
-An automatic harmonizer for monophonic midi files!
+An automatic algorithm-driven harmonizer for monophonic midi files!
