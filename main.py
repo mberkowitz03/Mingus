@@ -45,3 +45,35 @@ class Note:
     def __repr__(self):
         return self.note
 
+def isMajorThird(root, third):
+    return (CHROMATIC_SCALE.index(root) + 4) % 12 == CHROMATIC_SCALE.index(third)
+
+def getChords(scale):
+    chords = []
+    for note in range(len(scale)):
+        chords.append(Chord(scale[note], scale[(note + 2) % len(scale)], scale[(note + 4) % len(scale)]))
+    return chords
+
+def getScale(key):
+    majorSteps = [2, 2, 1, 2, 2, 2, 1]
+    minorSteps = [2, 1, 2, 2, 1, 2, 2]
+    scale = []
+    if 'b' in key:
+        key = key.replace('b', '#')
+        key = key.replace(key[0], CHROMATIC_SCALE[((CHROMATIC_SCALE.index(key[0]) + 10) % 12)])
+    if '#' in key:
+        curr = CHROMATIC_SCALE.index(key[0:2])
+    else:
+        curr = CHROMATIC_SCALE.index(key[0])
+
+    if key[-1] == 'm':
+        for i in range(7):
+            scale.append(CHROMATIC_SCALE[curr % 12])
+            curr += minorSteps[i]
+    else:
+        for i in range(7):
+            scale.append(CHROMATIC_SCALE[curr % 12])
+            curr += majorSteps[i]
+
+    return scale
+
