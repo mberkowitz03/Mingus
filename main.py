@@ -183,7 +183,7 @@ def main():
 
     #read into mido from filename
     fileName = input("Enter the name of the midi file: ")
-    mid = MidiFile(fileName)
+    mid = MidiFile("testMidis/" + fileName + ".mid")
     print("\nProcessing...\n")
     
     
