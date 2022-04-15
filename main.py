@@ -193,5 +193,7 @@ def main():
     #FINAL BLOCK
     printResults(finalChords)
 
+    #ADD OPTION TO SAVE CHORDS INTO A FILE?
+
 if __name__ == '__main__':
     main()     
