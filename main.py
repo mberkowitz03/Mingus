@@ -108,15 +108,14 @@ def processMusicXML():
     #initialize variables
     finalChords = []
     currMeasure = []
-    currMeasureLength = 0.0
 
-    downBeat = False
     #start looping through the file
     timeSignature = m21File.getTimeSignatures()[0].numerator
     global LENGTH_WEIGHT
     LENGTH_WEIGHT = 1.0 / timeSignature
     #set number of divisions or something
     keyScale = getScale(CIRCLE_OF_FIFTHS[m21File.parts[0].measure(1).keySignature.sharps])
+
     global keyChords 
     keyChords = getChords(keyScale)
     global nonKeyChords
@@ -126,18 +125,20 @@ def processMusicXML():
             if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
                 nonKeyChords.append(chord)
     
+    downBeat = True
     #for first note of each voice in each measure, add to currMeasure with downbeat true (check for chord)
-    #continue until you reach next measure tag
-    #set note beat length from duration tag w divisions.
-                #If note can simply fit and not end measure
-    
-    #PROCESSING To Find the best chord for this measure
-    #finalChords.append(processMeasure(currMeasure, finalChords))
-    #currMeasure = []
-    #end loop
-
-    #if reach end of track and currMeasure not empty
-        #finalChords.append(processMeasure(currMeasure, finalChords))
+    m21FileMeasures = m21File.parts[0].getElementsByClass(m21.stream.Measure)
+    for measure in m21FileMeasures.getElementsByClass('Measure'):
+        for note in measure.notes:
+            if note.isRest:
+                continue
+            if not downBeat and note.isChord and currMeasure[-1].isDownBeat:
+                downBeat = True
+            currMeasure.append(Note(note.pitch.midi, note.quarterLength, downBeat))
+            downBeat = False
+        downBeat = True
+        finalChords.append(processMeasure(currMeasure, finalChords))
+        currMeasure = []
     return finalChords
 
 def printResults(finalChords):
