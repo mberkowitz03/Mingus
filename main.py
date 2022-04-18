@@ -1,9 +1,7 @@
-from mido import MidiFile
-
+import music21 as m21
 global MARGIN_OF_ERROR, LENGTH_WEIGHT, CHORD_WEIGHT, DOWNBEAT_WEIGHT, DISTANCE_WEIGHT, JAZZINESS_FACTOR, CHROMATIC_SCALE, CIRCLE_OF_FIFTHS
 MARGIN_OF_ERROR = 0.005
 CHORD_WEIGHT = [1.2,0.8,1]
-LENGTH_WEIGHT = 1
 DOWNBEAT_WEIGHT = 0.2
 DISTANCE_WEIGHT = 0.1
 JAZZINESS_FACTOR = 0
@@ -106,63 +104,41 @@ def processMeasure(currMeasure, finalChords):
         fitDict[chord] = fit
     return keyWithMaxFit(fitDict)
 
-def processFile(mid):
+def processMusicXML():
     #initialize variables
     finalChords = []
     currMeasure = []
-    currMeasureLength = 0.0
-    nextMeasures = []
-    nextMeasuresLength = 0.0
 
-    downBeat = False
+    #start looping through the file
+    timeSignature = m21File.getTimeSignatures()[0].numerator
+    global LENGTH_WEIGHT
+    LENGTH_WEIGHT = 1.0 / timeSignature
+    #set number of divisions or something
+    keyScale = getScale(CIRCLE_OF_FIFTHS[m21File.parts[0].measure(1).keySignature.sharps])
 
-    for i in range(len(mid.tracks[0])):
-        #getting metadata
-        currMsg = (mid.tracks[0])[i]
-        if(currMsg.type == 'time_signature'):
-            timeSignature = [currMsg.dict()['numerator'], currMsg.dict()['denominator']]
-            ticksPerQuarter = (currMsg.dict()['clocks_per_click'] * currMsg.dict()['notated_32nd_notes_per_beat'] * 2.5)
-        elif(currMsg.type =='key_signature'):
-            keyScale = getScale(currMsg.dict()['key'])
-            print(keyScale)
-            global keyChords 
-            keyChords = getChords(keyScale)
-
-        #getting notes
-        elif(currMsg.type == 'note_on'):
-            #Checking for start of a note, not end
-            if(currMsg.dict()['velocity'] > 0):
-                #This Could be updated to allow polyphony in the future, also not sure if it will work with all midi structures
-                noteBeatLength = ((mid.tracks[0][i+1]).dict()['time'] + (mid.tracks[0][i+2]).dict()['time']) / ticksPerQuarter
-
-                #See if the note will be the start of the measure
-                downBeat = (currMeasureLength == 0.0) #could later add more complex downbeat system
-                remainingLength = timeSignature[0] - currMeasureLength
-
-                #If note can simply fit and not end measure
-                if noteBeatLength < (remainingLength - MARGIN_OF_ERROR):
-                    currMeasure.append(Note(currMsg.dict()['note'], noteBeatLength, downBeat))
-                    currMeasureLength += noteBeatLength
-                else:
-                    currMeasureLength = timeSignature[0]
-                    currMeasure.append(Note(currMsg.dict()['note'], remainingLength, downBeat))
-                    #If we need syncopation across bars
-                    if noteBeatLength > (remainingLength + MARGIN_OF_ERROR):
-                        nextMeasures.append(Note(currMsg.dict()['note'], noteBeatLength - remainingLength, False)) #is next downbeat
-                        nextMeasuresLength += noteBeatLength - remainingLength
-
-                    #PROCESSING To Find the best chord for this measure
-                    finalChords.append(processMeasure(currMeasure, finalChords))
-
-                    #Cleaning things up now that the current measure is processed
-                    currMeasure = nextMeasures
-                    currMeasureLength = nextMeasuresLength
-                    #fix for if next measure is longer than time signature
-                    nextMeasures = []
-                    nextMeasuresLength = 0.0
-                    downBeat = False
-        elif currMsg.type == 'end_of_track' and len(currMeasure) != 0:
-            finalChords.append(processMeasure(currMeasure, finalChords))
+    global keyChords 
+    keyChords = getChords(keyScale)
+    global nonKeyChords
+    nonKeyChords = []
+    for note in CHROMATIC_SCALE:
+        for chord in getChords(getScale(note)):
+            if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
+                nonKeyChords.append(chord)
+    
+    downBeat = True
+    #for first note of each voice in each measure, add to currMeasure with downbeat true (check for chord)
+    m21FileMeasures = m21File.parts[0].getElementsByClass(m21.stream.Measure)
+    for measure in m21FileMeasures.getElementsByClass('Measure'):
+        for note in measure.notes:
+            if note.isRest:
+                continue
+            if not downBeat and note.isChord and currMeasure[-1].isDownBeat:
+                downBeat = True
+            currMeasure.append(Note(note.pitch.midi, note.quarterLength, downBeat))
+            downBeat = False
+        downBeat = True
+        finalChords.append(processMeasure(currMeasure, finalChords))
+        currMeasure = []
     return finalChords
 
 def printResults(finalChords):
@@ -179,18 +155,12 @@ def keyWithMaxFit(fitDict):
 #MAIN FUNCTION
 def main():
 
-    #ADD COMMAND LINE XML SUPPORT TO EXPORT A MSCZ FILE or MXL file with chords added??
-
-    #read into mido from filename
-    fileName = input("Enter the name of the midi file: ")
-    mid = MidiFile("testMidis/" + fileName + ".mid")
+    fileName = input("Enter the path to the file you'd like to process: ")
     print("\nProcessing...\n")
-    
-    
-    #GET CHORDS IN ORDER OF MEASURE
-    finalChords = processFile(mid)
 
-    #FINAL BLOCK
+    global m21File
+    m21File = m21.converter.parse(fileName)
+    finalChords = processMusicXML()
     printResults(finalChords)
 
 if __name__ == '__main__':
