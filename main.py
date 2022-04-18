@@ -1,9 +1,7 @@
 import music21 as m21
-
 global MARGIN_OF_ERROR, LENGTH_WEIGHT, CHORD_WEIGHT, DOWNBEAT_WEIGHT, DISTANCE_WEIGHT, JAZZINESS_FACTOR, CHROMATIC_SCALE, CIRCLE_OF_FIFTHS
 MARGIN_OF_ERROR = 0.005
 CHORD_WEIGHT = [1.2,0.8,1]
-LENGTH_WEIGHT = 1
 DOWNBEAT_WEIGHT = 0.2
 DISTANCE_WEIGHT = 0.1
 JAZZINESS_FACTOR = 0
@@ -114,13 +112,19 @@ def processMusicXML():
 
     downBeat = False
     #start looping through the file
-    #have currmsg from the file
-    #getting metadata
+    timeSignature = m21File.getTimeSignatures()[0].numerator
+    global LENGTH_WEIGHT
+    LENGTH_WEIGHT = 1.0 / timeSignature
     #set number of divisions or something
-    #keyScale = getScale(currMsg.dict()['key'])
-    #print(keyScale)
-    #global keyChords 
-    #keyChords = getChords(keyScale)
+    keyScale = getScale(CIRCLE_OF_FIFTHS[m21File.parts[0].measure(1).keySignature.sharps])
+    global keyChords 
+    keyChords = getChords(keyScale)
+    global nonKeyChords
+    nonKeyChords = []
+    for note in CHROMATIC_SCALE:
+        for chord in getChords(getScale(note)):
+            if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
+                nonKeyChords.append(chord)
     
     #for first note of each voice in each measure, add to currMeasure with downbeat true (check for chord)
     #continue until you reach next measure tag
@@ -136,13 +140,6 @@ def processMusicXML():
         #finalChords.append(processMeasure(currMeasure, finalChords))
     return finalChords
 
-def openInputXML(fileName):
-    if(fileName[-9:] == ".musicxml"):
-        xmlFile = open(fileName, "r")
-        return True
-    else:
-        print("Mingus currently only supports .musicxml files")
-
 def printResults(finalChords):
     print("Final chords:")
     measureCount = 1
@@ -157,16 +154,13 @@ def keyWithMaxFit(fitDict):
 #MAIN FUNCTION
 def main():
 
-    #ADD COMMAND LINE XML SUPPORT TO EXPORT A MSCZ FILE or MXL file with chords added??
-
-    #read into mido from filename
     fileName = input("Enter the path to the file you'd like to process: ")
     print("\nProcessing...\n")
 
-    global xmlFile
-    if openInputXML(fileName):
-        finalChords = processMusicXML()
-        printResults(finalChords)
+    global m21File
+    m21File = m21.converter.parse(fileName)
+    finalChords = processMusicXML()
+    printResults(finalChords)
 
 if __name__ == '__main__':
     main()     
