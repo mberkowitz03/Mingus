@@ -3,7 +3,7 @@ global MARGIN_OF_ERROR, LENGTH_WEIGHT, CHORD_WEIGHT, DOWNBEAT_WEIGHT, DISTANCE_W
 MARGIN_OF_ERROR = 0.005
 CHORD_WEIGHT = [1.2,0.8,1]
 DOWNBEAT_WEIGHT = 0.2
-DISTANCE_WEIGHT = 0.1
+DISTANCE_WEIGHT = 0
 JAZZINESS_FACTOR = 0
 CHROMATIC_SCALE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 CIRCLE_OF_FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F']
@@ -95,8 +95,9 @@ def processMeasure(currMeasure, finalChords):
 
             #min is needed to find the roll-around distance. (i.e. for [1, 2, 3], 1 and 3 have a dist 1)
             dist = min(largerIndex - smallerIndex, len(CIRCLE_OF_FIFTHS) - largerIndex + smallerIndex)
+            print(dist)
             #Make algorithm strongly avoid same chords if jazziness is high.
-            dist = (dist + 11 * JAZZINESS_FACTOR) % 12
+            dist = (dist + 12 - JAZZINESS_FACTOR) % 12
             if dist == 0:
                 dist = 1
             fit -= dist * DISTANCE_WEIGHT
