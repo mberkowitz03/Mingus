@@ -1,4 +1,6 @@
+from posixpath import basename
 import music21 as m21
+import os
 global CHORD_WEIGHT, DOWNBEAT_WEIGHT, DISTANCE_WEIGHT, OFF_KEY_WEIGHT, JAZZINESS_FACTOR, CHROMATIC_SCALE, CIRCLE_OF_FIFTHS
 CHORD_WEIGHT = [1.2,0.8,1]
 DOWNBEAT_WEIGHT = 0.2
@@ -19,16 +21,18 @@ class Chord:
         self.notes = [root, third, fifth]
 
     def __repr__(self):
-        returnStr = self.notes[0]
+        return self.notes[0] + self.getQuality()
+
+    def getQuality(self):
         if isMajorThird(self.notes[1], self.notes[2]):
             if isMajorThird(self.notes[0], self.notes[1]):
-                returnStr += "aug"
+                return "aug"
             else:
-                returnStr += "m"
+                return "m"
         elif not isMajorThird(self.notes[0], self.notes[1]): 
-            returnStr += "dim"
-        
-        return returnStr
+            return "dim"
+        else:
+            return ""
 
 class Note:
     note = ""
@@ -137,7 +141,10 @@ def processMusicXML():
                 currMeasure.append(Note(note.pitch.midi, note.quarterLength, downBeat))
             downBeat = False
         downBeat = True
-        finalChords.append(processMeasure(currMeasure, finalChords))
+        resultChord = processMeasure(currMeasure, finalChords)
+        finalChords.append(resultChord)
+        #add harmony to measure with resultChord
+        measure.insert(m21.harmony.ChordSymbol(str(resultChord)))
         currMeasure = []
     return finalChords
 
@@ -162,6 +169,11 @@ def main():
     m21File = m21.converter.parse(fileName)
     finalChords = processMusicXML()
     printResults(finalChords)
+    print("Inserting chords into original file...")
+    print("Saving file...")
+    splitFile = fileName.split(".")
+    m21File.write(splitFile[1], splitFile[0] + '_output.' + splitFile[1])
+
 
 if __name__ == '__main__':
     main()     
