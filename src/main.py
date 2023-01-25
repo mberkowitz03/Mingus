@@ -58,8 +58,6 @@ class MingusRunner:
 		# Creates list of chords that are in the scale of the key signature
 		self.keyChords = getChords(keyScale)
 		self.nonKeyChords = {chord for note in CHROMATIC_SCALE for chord in getChords(getScale(note)) if chord not in self.keyChords}
-		for chord in self.nonKeyChords:
-			print(chord)
 		# for note in CHROMATIC_SCALE:
 		# 	for chord in getChords(getScale(note)):
 		# 		if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
@@ -110,7 +108,6 @@ def getChords(scale):
 def getScale(key):
 	majorSteps = [2, 2, 1, 2, 2, 2, 1]
 	minorSteps = [2, 1, 2, 2, 1, 2, 2]
-	scale = []
 	if 'b' in key:
 		key = key.replace('b', '#')
 		key = key.replace(key[0], CHROMATIC_SCALE[((CHROMATIC_SCALE.index(key[0]) + 10) % 12)])
@@ -118,7 +115,7 @@ def getScale(key):
 		curr = CHROMATIC_SCALE.index(key[0:2])
 	else:
 		curr = CHROMATIC_SCALE.index(key[0])
-
+	scale = []
 	if key[-1] == 'm':
 		for i in range(7):
 			scale.append(CHROMATIC_SCALE[curr % 12])
