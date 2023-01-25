@@ -1,4 +1,4 @@
-CHROMATIC_SCALE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+from main import CHROMATIC_SCALE
 
 class Note:
 	note = ""

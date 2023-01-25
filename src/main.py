@@ -21,7 +21,7 @@ class MingusRunner:
 			fit = 0
 			for note in currMeasure:
 				if note.note in chord.notes:
-					fit += (note.beatLength * LENGTH_WEIGHT) * (self.CHORD_WEIGHT[chord.notes.index(note.note)] + (int(note.isDownbeat) * self.DOWNBEAT_WEIGHT))
+					fit += (note.beatLength * self.LENGTH_WEIGHT) * (self.CHORD_WEIGHT[chord.notes.index(note.note)] + (int(note.isDownbeat) * self.DOWNBEAT_WEIGHT))
 			if len(finalChords) != 0:
 				#Fitting to be relatively close to the past note in the circle of fifths.
 				#MAYBE ALTER THIS TO BE A THEORY BASED APPROACH (I.E. 4 - 5 - 1 AND THINGS LIKE THAT)
@@ -49,8 +49,7 @@ class MingusRunner:
 
 		# Get time divisions
 		timeSignature = self.m21File.getTimeSignatures()[0].numerator
-		global LENGTH_WEIGHT
-		LENGTH_WEIGHT = 1.0 / timeSignature
+		self.LENGTH_WEIGHT = 1.0 / timeSignature
 
 		# Finds key name by number of sharps in the scale
 		keyScale = getScale(CIRCLE_OF_FIFTHS[self.m21File.parts[0].measure(1).keySignature.sharps])
