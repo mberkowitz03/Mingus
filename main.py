@@ -138,13 +138,10 @@ def keyWithMaxFit(fitDict):
 	keys=list(fitDict.keys())
 	return keys[vals.index(max(vals))]
 
-def updateWindow(*args):
-	
+def print(*args):
 	window["OUTPUT"].print(' '.join(map(str, args)) + "\n")
 
 def main():
-	global print
-	print = updateWindow
 	mingusRunner = MingusRunner()
 	psg.theme("DarkBrown")
 
