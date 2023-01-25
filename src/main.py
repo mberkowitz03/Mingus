@@ -13,12 +13,11 @@ class MingusRunner:
 	DISTANCE_WEIGHT = 0
 	OFF_KEY_WEIGHT = 0.9 #Higher prefers out of key chords
 	JAZZINESS_FACTOR = 1
-	m21File = None
 
 	def processMeasure(self, currMeasure, finalChords):
 		#PROCESSING HERE
 		fitDict = {}
-		for chord in keyChords + nonKeyChords:
+		for chord in self.keyChords.union(self.nonKeyChords):
 			fit = 0
 			for note in currMeasure:
 				if note.note in chord.notes:
@@ -38,7 +37,7 @@ class MingusRunner:
 				if dist == 0:
 					dist = 1
 				fit -= dist * self.DISTANCE_WEIGHT
-			if chord in nonKeyChords: 
+			if chord in self.nonKeyChords: 
 				fit *= self.OFF_KEY_WEIGHT
 			fitDict[chord] = fit
 		return keyWithMaxFit(fitDict)
@@ -57,14 +56,14 @@ class MingusRunner:
 		keyScale = getScale(CIRCLE_OF_FIFTHS[self.m21File.parts[0].measure(1).keySignature.sharps])
 
 		# Creates list of chords that are in the scale of the key signature
-		global keyChords 
-		keyChords = getChords(keyScale)
-		global nonKeyChords
-		nonKeyChords = []
-		for note in CHROMATIC_SCALE:
-			for chord in getChords(getScale(note)):
-				if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
-					nonKeyChords.append(chord)
+		self.keyChords = getChords(keyScale)
+		self.nonKeyChords = {chord for note in CHROMATIC_SCALE for chord in getChords(getScale(note)) if chord not in self.keyChords}
+		for chord in self.nonKeyChords:
+			print(chord)
+		# for note in CHROMATIC_SCALE:
+		# 	for chord in getChords(getScale(note)):
+		# 		if str(chord) not in [str(x) for x in keyChords] and str(chord) not in [str(x) for x in nonKeyChords]:
+		# 			nonKeyChords.append(chord)
 		
 		downBeat = True
 		#for first note of each voice in each measure, add to currMeasure with downbeat true (check for chord)
@@ -105,10 +104,8 @@ class MingusRunner:
 
 
 def getChords(scale):
-	chords = []
-	for note in range(len(scale)):
-		chords.append(chord.Chord(scale[note], scale[(note + 2) % len(scale)], scale[(note + 4) % len(scale)]))
-	return chords
+	# Gives all possible triads formed from a scale
+	return {chord.Chord(scale[note], scale[(note + 2) % len(scale)], scale[(note + 4) % len(scale)]) for note in range(len(scale))}
 
 def getScale(key):
 	majorSteps = [2, 2, 1, 2, 2, 2, 1]
