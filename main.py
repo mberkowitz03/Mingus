@@ -173,3 +173,9 @@ def main():
 
 if __name__ == '__main__':
 	main()     
+
+#TODO
+# Make gui more attractive
+	# Maybe put chord results in a openable window to make text fit
+	# Change font?
+# Eventually Maybe add machine learning if I can find a suitable dataset
