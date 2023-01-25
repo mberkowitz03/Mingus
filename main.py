@@ -139,11 +139,8 @@ def keyWithMaxFit(fitDict):
 	return keys[vals.index(max(vals))]
 
 def updateWindow(*args):
-	string = window["OUTPUT"].get()
-	for arg in args:
-		string += str(arg) + " "
-	string += "\n\n"
-	window["OUTPUT"].update(string)
+	
+	window["OUTPUT"].print(' '.join(map(str, args)) + "\n")
 
 def main():
 	global print
@@ -153,20 +150,20 @@ def main():
 
 	layout = [[psg.Text("Enter the file you'd like to harmonize: ")],
 			[psg.Input(key="-I-", do_not_clear=False), psg.FileBrowse(key="-IN-")], 
-			[psg.Button("Submit")], 
-			[psg.Text(key="OUTPUT")]]
+			[psg.Button("Submit"), psg.Button("Exit")], 
+			[psg.Multiline(key="OUTPUT", size=(400, 400), write_only=True)]]
 	global window
-	window = psg.Window("Mingus", layout, size=(600, 400), grab_anywhere=True, resizable=True)
+	window = psg.Window("Mingus", layout, size=(800, 600), grab_anywhere=True, resizable=True)
 
 	psg.set_options(element_padding=(10,10))
 
 	while True:
 		event, values = window.read()
-		if event == psg.WIN_CLOSED:
+		if event == psg.WIN_CLOSED or event == "Exit":
 			break
 		elif event == "Submit":
 			filename = values["-IN-"]
-			print("\nProcessing...\n")
+			print("Processing...")
 			mingusRunner.runMingus(filename)
 	
 	window.close()
@@ -176,6 +173,6 @@ if __name__ == '__main__':
 
 #TODO
 # Make gui more attractive
-	# Maybe put chord results in a openable window to make text fit
 	# Change font?
+# investigate why import works incorrectly in muse 4
 # Eventually Maybe add machine learning if I can find a suitable dataset
