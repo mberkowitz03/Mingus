@@ -1,4 +1,4 @@
-from main import CHROMATIC_SCALE
+CHROMATIC_SCALE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 class Chord:
 	def __init__(self, root, isMajor):

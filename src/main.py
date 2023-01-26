@@ -90,7 +90,12 @@ class MingusRunner:
 			measureCount += 1
 
 	def runMingus(self, filename):
-		self.m21File = m21.converter.parse(filename)
+		try:
+			self.m21File = m21.converter.parse(filename)
+		except:
+			clear()
+			print("Couldn't parse file - try a different format")
+			return
 		finalChords = self.processMusicXML()
 		self.printResults(finalChords)
 		print("Inserting chords into original file...")
@@ -134,14 +139,17 @@ def keyWithMaxFit(fitDict):
 def print(*args):
 	window["OUTPUT"].print(' '.join(map(str, args)) + "\n")
 
+def clear():
+	window["OUTPUT"].update("")
+
 def main():
 	mingusRunner = MingusRunner()
 	psg.theme("DarkBrown")
 
 	layout = [[psg.Text("Enter the file you'd like to harmonize: ")],
-			[psg.Input(key="-I-", do_not_clear=False), psg.FileBrowse(key="-IN-")], 
-			[psg.Button("Submit"), psg.Button("Exit")], 
-			[psg.Multiline(key="OUTPUT", size=(400, 400), write_only=True)]]
+			[psg.Input(key="-I-", do_not_clear=False), psg.FileBrowse(key="-IN-", change_submits=True)], 
+			[psg.Button("Submit"), psg.Exit(), psg.pin(psg.Button("Remove", key="REMOVE", visible=False))], 
+			[psg.Multiline(key="OUTPUT", size=(400, 400), write_only=True, )]]
 	global window
 	window = psg.Window("Mingus", layout, size=(800, 600), grab_anywhere=True, resizable=True)
 
@@ -155,6 +163,11 @@ def main():
 			filename = values["-IN-"]
 			print("Processing...")
 			mingusRunner.runMingus(filename)
+			window["REMOVE"].update(visible=True)
+		elif event == "REMOVE":
+			clear()
+			window["REMOVE"].update(visible=False)
+
 	
 	window.close()
 
@@ -164,5 +177,8 @@ if __name__ == '__main__':
 #TODO
 # Make gui more attractive
 	# Change font?
+# Change filebrowse to only allow supported filetypes
+# Add button to open output file
 # investigate why import works incorrectly in muse 4
+# Maybe add theory?
 # Eventually Maybe add machine learning if I can find a suitable dataset
