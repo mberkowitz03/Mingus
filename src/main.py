@@ -2,7 +2,7 @@ from posixpath import basename
 import music21 as m21
 import PySimpleGUI as psg
 import chord, note as nt
-import os
+import os, subprocess, platform
 global CHROMATIC_SCALE, CIRCLE_OF_FIFTHS
 CHROMATIC_SCALE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 CIRCLE_OF_FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'F']
@@ -99,11 +99,10 @@ class MingusRunner:
 		finalChords = self.processMusicXML()
 		self.printResults(finalChords)
 		print("Inserting chords into original file...")
-		print("Saving file...")
-		splitFile = filename.split(".")
-		self.m21File.write(splitFile[1], splitFile[0] + '_output.' + splitFile[1])
+		format = filename.split(".")[1]
+		print("Saving file to", outputFilePath(filename))
+		self.m21File.write(format, outputFilePath(filename))
 		print("Done!")
-
 
 def getChords(scale):
 	# Gives all possible triads formed from a scale
@@ -136,6 +135,10 @@ def keyWithMaxFit(fitDict):
 	keys=list(fitDict.keys())
 	return keys[vals.index(max(vals))]
 
+def outputFilePath(filename):
+	splitFile = filename.split(".")
+	return splitFile[0] + '_output.' + splitFile[1]
+
 def print(*args):
 	window["OUTPUT"].print(' '.join(map(str, args)) + "\n")
 
@@ -147,8 +150,8 @@ def main():
 	psg.theme("DarkBrown")
 
 	layout = [[psg.Text("Enter the file you'd like to harmonize: ")],
-			[psg.Input(key="-I-", do_not_clear=False), psg.FileBrowse(key="-IN-", change_submits=True)], 
-			[psg.Button("Submit"), psg.Exit(), psg.pin(psg.Button("Remove", key="REMOVE", visible=False))], 
+			[psg.Input(key="-I-", do_not_clear=False), psg.FileBrowse(key="-IN-")], 
+			[psg.Button("Submit"), psg.Exit(), psg.pin(psg.Cancel(visible=False, pad=((120, 0),(0,0)))), psg.pin(psg.Button("Open", visible=False))], 
 			[psg.Multiline(key="OUTPUT", size=(400, 400), write_only=True, )]]
 	global window
 	window = psg.Window("Mingus", layout, size=(800, 600), grab_anywhere=True, resizable=True)
@@ -163,11 +166,21 @@ def main():
 			filename = values["-IN-"]
 			print("Processing...")
 			mingusRunner.runMingus(filename)
-			window["REMOVE"].update(visible=True)
-		elif event == "REMOVE":
+			window["Cancel"].update(visible=True)
+			window["Open"].update(visible=True)
+		elif event == "Cancel":
+			os.remove(outputFilePath(filename))
 			clear()
-			window["REMOVE"].update(visible=False)
-
+			window["Cancel"].update(visible=False)
+			window["Open"].update(visible=False)
+		elif event == "Open":
+			filepath = outputFilePath(filename)
+			if platform.system() == 'Darwin':       # macOS
+				subprocess.call(('open', filepath))
+			elif platform.system() == 'Windows':    # Windows
+				os.startfile(filepath)
+			else:                                   # linux variants
+				subprocess.call(('xdg-open', filepath))
 	
 	window.close()
 
@@ -178,7 +191,6 @@ if __name__ == '__main__':
 # Make gui more attractive
 	# Change font?
 # Change filebrowse to only allow supported filetypes
-# Add button to open output file
 # investigate why import works incorrectly in muse 4
 # Maybe add theory?
 # Eventually Maybe add machine learning if I can find a suitable dataset
