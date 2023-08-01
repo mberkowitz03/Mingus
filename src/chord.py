@@ -1,9 +1,9 @@
-CHROMATIC_SCALE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+import note as nt
 
 class Chord:
 	def __init__(self, root, isMajor):
-		rootIndex = CHROMATIC_SCALE.index(root)
-		self.notes = (root, CHROMATIC_SCALE[(rootIndex + 3 + isMajor) % 12], root + 7)
+		rootIndex = nt.CHROMATIC_SCALE.index(root)
+		self.notes = (root, nt.CHROMATIC_SCALE[(rootIndex + 3 + isMajor) % 12], root + 7)
 	
 	def __init__(self, root, third, fifth):
 		self.notes = (root, third, fifth)
@@ -29,4 +29,8 @@ class Chord:
 			return ""
 
 def isMajorThird(root, third):
-	return (CHROMATIC_SCALE.index(root) + 4) % 12 == CHROMATIC_SCALE.index(third)
+	return (nt.CHROMATIC_SCALE.index(root) + 4) % 12 == nt.CHROMATIC_SCALE.index(third)
+
+def getChords(scale):
+	# Gives all possible triads formed from a scale
+	return {Chord(scale[note], scale[(note + 2) % len(scale)], scale[(note + 4) % len(scale)]) for note in range(len(scale))}
