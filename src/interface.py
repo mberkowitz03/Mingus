@@ -1,7 +1,15 @@
-import mingus
 import PySimpleGUI as psg
-import os, subprocess, platform
 
+def readWindow():
+	return window.read()
+
+def makeButtonsVisible():
+	window["Cancel"].update(visible=True)
+	window["Open"].update(visible=True)
+
+def makeButtonsInvisible():
+	window["Cancel"].update(visible=False)
+	window["Open"].update(visible=False)
 
 def outputFilePath(filename):
 	splitFile = filename.split(".")
@@ -13,8 +21,7 @@ def print(*args):
 def clear():
 	window["OUTPUT"].update("")
 
-def main():
-	runner = mingus.Runner()
+def open():
 	psg.theme("DarkBrown")
 
 	layout = [[psg.Text("Enter the file you'd like to harmonize: ")],
@@ -27,34 +34,11 @@ def main():
 
 	psg.set_options(element_padding=(10,10))
 
-	while True:
-		event, values = window.read()
-		if event == psg.WIN_CLOSED or event == "Exit":
-			break
-		elif event == "Submit":
-			filename = values["-IN-"]
-			print("Processing...")
-			runner.run(filename)
-			window["Cancel"].update(visible=True)
-			window["Open"].update(visible=True)
-		elif event == "Cancel":
-			os.remove(outputFilePath(filename))
-			clear()
-			window["Cancel"].update(visible=False)
-			window["Open"].update(visible=False)
-		elif event == "Open":
-			filepath = outputFilePath(filename)
-			if platform.system() == 'Darwin':       # macOS
-				subprocess.call(('open', filepath))
-			elif platform.system() == 'Windows':    # Windows
-				os.startfile(filepath)
-			else:                                   # linux variants
-				subprocess.call(('xdg-open', filepath))
-	
+def close():
 	window.close()
 
-if __name__ == '__main__':
-	main()     
+def isClosed():
+	return psg.WIN_CLOSED
 
 #TODO
 # Make gui more attractive

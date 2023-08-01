@@ -10,38 +10,40 @@ class Runner:
 	OFF_KEY_WEIGHT = 0.9 #Higher prefers out of key chords
 	JAZZINESS_FACTOR = 1
 
-	def processMeasure(self, currMeasure, finalChords):
+	def calculateFit(self, measure, chord):
+		fit = 0
+		for note in measure:
+			if note.note in chord.notes:
+				fit += (note.beatLength * self.LENGTH_WEIGHT) * (self.CHORD_WEIGHT[chord.notes.index(note.note)] + (int(note.isDownbeat) * self.DOWNBEAT_WEIGHT))
+		if len(self.finalChords) != 0:
+			#Fitting to be relatively close to the past note in the circle of fifths.
+			#MAYBE ALTER THIS TO BE A THEORY BASED APPROACH (I.E. 4 - 5 - 1 AND THINGS LIKE THAT)
+			prevChordRootIndex = nt.CIRCLE_OF_FIFTHS.index(self.finalChords[-1].notes[0])
+			currChordRootIndex = nt.CIRCLE_OF_FIFTHS.index(chord.notes[0])
+			largerIndex = max(prevChordRootIndex, currChordRootIndex)
+			smallerIndex = min(prevChordRootIndex, currChordRootIndex)
+
+			#min is needed to find the roll-around distance. (i.e. for [1, 2, 3], 1 and 3 have a dist 1)
+			dist = min(largerIndex - smallerIndex, len(nt.CIRCLE_OF_FIFTHS) - largerIndex + smallerIndex)
+			#Make algorithm strongly avoid same chords if jazziness is high.
+			dist = (dist + 12 - self.JAZZINESS_FACTOR) % 12
+			if dist == 0:
+				dist = 1
+			fit -= dist * self.DISTANCE_WEIGHT
+		if chord in self.nonKeyChords: 
+			fit *= self.OFF_KEY_WEIGHT
+		return fit
+
+	def processMeasure(self, currMeasure):
 		#PROCESSING HERE
 		fitDict = {}
 		for chord in self.keyChords.union(self.nonKeyChords):
-			fit = 0
-			for note in currMeasure:
-				if note.note in chord.notes:
-					fit += (note.beatLength * self.LENGTH_WEIGHT) * (self.CHORD_WEIGHT[chord.notes.index(note.note)] + (int(note.isDownbeat) * self.DOWNBEAT_WEIGHT))
-			if len(finalChords) != 0:
-				#Fitting to be relatively close to the past note in the circle of fifths.
-				#MAYBE ALTER THIS TO BE A THEORY BASED APPROACH (I.E. 4 - 5 - 1 AND THINGS LIKE THAT)
-				prevChordRootIndex = nt.CIRCLE_OF_FIFTHS.index(finalChords[-1].notes[0])
-				currChordRootIndex = nt.CIRCLE_OF_FIFTHS.index(chord.notes[0])
-				largerIndex = max(prevChordRootIndex, currChordRootIndex)
-				smallerIndex = min(prevChordRootIndex, currChordRootIndex)
-
-				#min is needed to find the roll-around distance. (i.e. for [1, 2, 3], 1 and 3 have a dist 1)
-				dist = min(largerIndex - smallerIndex, len(nt.CIRCLE_OF_FIFTHS) - largerIndex + smallerIndex)
-				#Make algorithm strongly avoid same chords if jazziness is high.
-				dist = (dist + 12 - self.JAZZINESS_FACTOR) % 12
-				if dist == 0:
-					dist = 1
-				fit -= dist * self.DISTANCE_WEIGHT
-			if chord in self.nonKeyChords: 
-				fit *= self.OFF_KEY_WEIGHT
-			fitDict[chord] = fit
+			fitDict[chord] = self.calculateFit(currMeasure, chord)
 		return keyWithMaxFit(fitDict)
 	
 	#All Files are converted to musicxml
 	def processMusicXML(self):
-		finalChords = []
-		currMeasure = []
+		self.finalChords = []
 
 		# Get time divisions
 		timeSignature = self.m21File.getTimeSignatures()[0].numerator
@@ -52,12 +54,15 @@ class Runner:
 
 		# Creates list of chords that are in the scale of the key signature
 		self.keyChords = chord.getChords(keyScale)
-		self.nonKeyChords = {chord for note in nt.CHROMATIC_SCALE for chord in chord.getChords(nt.getScale(note)) if chord not in self.keyChords}
-		
-		downBeat = True
-		#for first note of each voice in each measure, add to currMeasure with downbeat true (check for chord)
+		# gotta be a better way to do this
+		self.nonKeyChords = {c for c in chord.getChords(nt.CHROMATIC_SCALE) if c not in self.keyChords}
+
 		m21FileMeasures = self.m21File.parts[0].getElementsByClass(m21.stream.Measure)
+
 		for measure in m21FileMeasures.getElementsByClass('Measure'):
+			currMeasure = []
+			downBeat = True
+
 			for note in measure.flatten().notes: #Check to make sure different voices are getting a new downbeat
 				if note.isChord:
 					for chordNote in note:
@@ -65,14 +70,14 @@ class Runner:
 				else:
 					currMeasure.append(nt.Note(note.pitch.midi, note.quarterLength, downBeat))
 				downBeat = False
-			downBeat = True
-			resultChord = self.processMeasure(currMeasure, finalChords)
-			finalChords.append(resultChord)
-			#add harmony to measure with resultChord
-			measure.insert(m21.harmony.ChordSymbol(str(resultChord)))
-			currMeasure = []
 
-		return finalChords
+			measureChord = self.processMeasure(currMeasure)
+			self.finalChords.append(measureChord)
+			#add harmony to measure with resultChord
+			measure.insert(m21.harmony.ChordSymbol(str(measureChord)))
+			
+
+		return self.finalChords
 
 	def printResults(self, finalChords):
 		print("Final chords:")
@@ -102,4 +107,5 @@ def keyWithMaxFit(fitDict):
 	#by some unfathomable nightmare, this is the fastest way to get the key of the max value in a dictionary
 	vals=list(fitDict.values())
 	keys=list(fitDict.keys())
+	print("performed fit calculation")
 	return keys[vals.index(max(vals))]
