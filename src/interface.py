@@ -46,4 +46,4 @@ def isClosed():
 # Change filebrowse to only allow supported filetypes
 # investigate why import works incorrectly in muse 4
 # Maybe add theory?
-# Eventually Maybe add machine learning if I can find a suitable dataset
+# Eventually make ML model if I can find a suitable dataset
